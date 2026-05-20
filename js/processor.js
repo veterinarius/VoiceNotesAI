@@ -8,7 +8,8 @@ class AITextProcessor {
     if (!rawText.trim()) return '';
     const apiKey = localStorage.getItem('vn_claude_key');
     if (apiKey) {
-      try { return await this._processClaude(rawText, apiKey, lang); } catch {}
+      return await this._processClaude(rawText, apiKey, lang);
+      // Fehler wird nach oben weitergegeben und vom Aufrufer behandelt
     }
     return this._processRules(rawText, lang);
   }
@@ -38,7 +39,7 @@ class AITextProcessor {
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-3-5-haiku-20241022',
         max_tokens: 1024,
         messages: [{
           role: 'user',

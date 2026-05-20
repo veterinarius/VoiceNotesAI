@@ -200,7 +200,13 @@ document.addEventListener('DOMContentLoaded', () => {
     ui.setTranscript('✨ Text wird verarbeitet…');
 
     const lang = localStorage.getItem('vn_lang') || 'de-DE';
-    const body = await processor.process(rawText, lang);
+    let body;
+    try {
+      body = await processor.process(rawText, lang);
+    } catch (e) {
+      ui.showToast('Claude API Fehler – einfache Bereinigung verwendet', 'error');
+      body = processor._processRules(rawText, lang);
+    }
     const note = {
       id: Date.now().toString(),
       title: processor.generateTitle(body),
