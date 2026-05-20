@@ -13,7 +13,7 @@ class SpeechRecognizer {
 
   _newSession() {
     const r = new this._SpeechAPI();
-    r.continuous = false;
+    r.continuous = true;
     r.interimResults = true;
     r.lang = localStorage.getItem('vn_lang') || 'de-DE';
 
@@ -40,6 +40,12 @@ class SpeechRecognizer {
     };
 
     r.onend = () => {
+      if (this._stopResolve) {
+        const resolve = this._stopResolve;
+        this._stopResolve = null;
+        resolve(this._finalText.trim());
+        return;
+      }
       if (!this._running) return;
       setTimeout(() => {
         if (!this._running) return;
@@ -57,16 +63,26 @@ class SpeechRecognizer {
     if (!this.supported) return;
     this._finalText = '';
     this._running = true;
+    this._stopResolve = null;
     this._session = this._newSession();
     this._session.start();
   }
 
   stop() {
     this._running = false;
-    if (this._session) {
-      try { this._session.abort(); } catch {}
+    return new Promise((resolve) => {
+      if (!this._session) { resolve(this._finalText.trim()); return; }
+      this._stopResolve = resolve;
+      try { this._session.stop(); } catch { resolve(this._finalText.trim()); }
       this._session = null;
-    }
+      // Fallback: falls onend nicht feuert
+      setTimeout(() => {
+        if (this._stopResolve) {
+          this._stopResolve = null;
+          resolve(this._finalText.trim());
+        }
+      }, 1500);
+    });
   }
 
   getText() {

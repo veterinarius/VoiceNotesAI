@@ -136,8 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); currentStream = null; }
       await finishRecording(rawText, duration);
     } else {
-      const rawText = speech.getText();
-      speech.stop();
+      const rawText = await speech.stop();
       if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); currentStream = null; }
       await finishRecording(rawText, duration);
     }
