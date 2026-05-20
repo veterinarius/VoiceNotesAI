@@ -199,10 +199,32 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(() => ui.showToast('Kopieren fehlgeschlagen', 'error'));
   });
 
-  document.getElementById('btn-download')?.addEventListener('click', () => {
+  // Button-Label je nach Plattform anpassen
+  const btnDownload = document.getElementById('btn-download');
+  if (btnDownload && navigator.share) btnDownload.textContent = 'Teilen';
+
+  btnDownload?.addEventListener('click', async () => {
     const id = document.getElementById('detail-id')?.value;
     const note = id ? store.getById(id) : null;
     if (!note) return;
+
+    // iOS / Web Share API
+    if (navigator.share) {
+      try {
+        const file = new File([note.body], note.title.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_') + '.txt', { type: 'text/plain' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ title: note.title, files: [file] });
+        } else {
+          await navigator.share({ title: note.title, text: note.body });
+        }
+        ui.showToast('Geteilt', 'success');
+      } catch (e) {
+        if (e.name !== 'AbortError') ui.showToast('Teilen fehlgeschlagen', 'error');
+      }
+      return;
+    }
+
+    // Desktop: Datei-Download
     const blob = new Blob([note.body], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
