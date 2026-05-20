@@ -7,8 +7,10 @@ class SpeechRecognizer {
     this.onFinal = () => {};
     this.onError = () => {};
     this._finalText = '';
+    this._interimText = '';   // Fallback für iOS Safari
     this._running = false;
     this._session = null;
+    this._stopResolve = null;
   }
 
   _newSession() {
@@ -23,11 +25,13 @@ class SpeechRecognizer {
         const t = e.results[i][0].transcript;
         if (e.results[i].isFinal) {
           this._finalText += t + ' ';
+          this._interimText = '';
           this.onFinal(this._finalText.trim());
         } else {
           interim += t;
         }
       }
+      if (interim) this._interimText = interim;
       this.onInterim(this._finalText + interim);
     };
 
@@ -43,7 +47,8 @@ class SpeechRecognizer {
       if (this._stopResolve) {
         const resolve = this._stopResolve;
         this._stopResolve = null;
-        resolve(this._finalText.trim());
+        // iOS Safari liefert manchmal nur interim → als Fallback verwenden
+        resolve((this._finalText + this._interimText).trim());
         return;
       }
       if (!this._running) return;
@@ -62,6 +67,7 @@ class SpeechRecognizer {
   start() {
     if (!this.supported) return;
     this._finalText = '';
+    this._interimText = '';
     this._running = true;
     this._stopResolve = null;
     this._session = this._newSession();
@@ -71,22 +77,27 @@ class SpeechRecognizer {
   stop() {
     this._running = false;
     return new Promise((resolve) => {
-      if (!this._session) { resolve(this._finalText.trim()); return; }
+      if (!this._session) {
+        resolve((this._finalText + this._interimText).trim());
+        return;
+      }
       this._stopResolve = resolve;
-      try { this._session.stop(); } catch { resolve(this._finalText.trim()); }
+      try { this._session.stop(); } catch {
+        resolve((this._finalText + this._interimText).trim());
+      }
       this._session = null;
-      // Fallback: falls onend nicht feuert
+      // Fallback: falls onend nicht feuert (z.B. iOS Safari)
       setTimeout(() => {
         if (this._stopResolve) {
           this._stopResolve = null;
-          resolve(this._finalText.trim());
+          resolve((this._finalText + this._interimText).trim());
         }
       }, 1500);
     });
   }
 
   getText() {
-    return this._finalText.trim();
+    return (this._finalText + this._interimText).trim();
   }
 }
 
