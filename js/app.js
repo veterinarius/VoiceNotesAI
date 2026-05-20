@@ -73,14 +73,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- Whisper Aufnahme ---
-  async function startWhisperRecording() {
+  // --- Mikrofon-Stream (in Arc einmalig anfordern und halten) ---
+  function streamActive() {
+    return currentStream && currentStream.getTracks().some(t => t.readyState === 'live');
+  }
+
+  async function acquireStream() {
+    if (streamActive()) return true;
     try {
       currentStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      return true;
     } catch {
       ui.showToast('Mikrofon-Zugriff verweigert', 'error');
-      return;
+      return false;
     }
+  }
+
+  function releaseStream() {
+    // In Arc Stream halten, damit kein wiederholter Berechtigungs-Dialog erscheint
+    if (!isArc && currentStream) {
+      currentStream.getTracks().forEach(t => t.stop());
+      currentStream = null;
+    }
+  }
+
+  window.addEventListener('beforeunload', () => {
+    if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+  });
+
+  // --- Whisper Aufnahme ---
+  async function startWhisperRecording() {
+    if (!await acquireStream()) return;
 
     ui.show('recording');
     ui.setTranscript('🎙 Aufnahme läuft – nach dem Stoppen wird Text erkannt…');
@@ -96,12 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Web Speech Aufnahme ---
   async function startSpeechRecording() {
-    try {
-      currentStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch {
-      ui.showToast('Mikrofon-Zugriff verweigert', 'error');
-      return;
-    }
+    if (!await acquireStream()) return;
 
     ui.show('recording');
     ui.setTranscript('🎙 Mikrofon aktiv – bitte sprechen…');
@@ -144,11 +162,11 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (e) {
         ui.showToast('Transkription fehlgeschlagen: ' + e.message, 'error');
       }
-      if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); currentStream = null; }
+      releaseStream();
       await finishRecording(rawText, duration);
     } else {
       const rawText = await speech.stop();
-      if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); currentStream = null; }
+      releaseStream();
       await finishRecording(rawText, duration);
     }
   }
