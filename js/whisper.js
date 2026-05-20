@@ -19,13 +19,20 @@ class WhisperRecorder {
     this._recorder.onerror = (e) => { console.error('MediaRecorder error:', e.error); };
     this._recorder.start(100);
 
-    // Waveform-Analyse über denselben Stream
-    this._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const source = this._audioCtx.createMediaStreamSource(stream);
-    this._analyser = this._audioCtx.createAnalyser();
-    this._analyser.fftSize = 256;
-    source.connect(this._analyser);
-    this._drawLevel();
+    // Waveform-Analyse ist optional – kein Fehler wenn AudioContext nicht verfügbar
+    try {
+      this._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (this._audioCtx.state === 'suspended') this._audioCtx.resume().catch(() => {});
+      const source = this._audioCtx.createMediaStreamSource(stream);
+      this._analyser = this._audioCtx.createAnalyser();
+      this._analyser.fftSize = 256;
+      source.connect(this._analyser);
+      this._drawLevel();
+    } catch (e) {
+      console.warn('Waveform nicht verfügbar:', e);
+      this._audioCtx = null;
+      this._analyser = null;
+    }
   }
 
   stop() {

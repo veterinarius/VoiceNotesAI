@@ -114,8 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function startWhisperRecording() {
     if (!await acquireStream()) return;
 
-    // Frischen Klon für jeden MediaRecorder-Durchlauf erzeugen
-    recordingStream = currentStream.clone();
+    recordingStream = currentStream;
 
     ui.show('recording');
     ui.setTranscript('🎙 Aufnahme läuft – nach dem Stoppen wird Text erkannt…');
@@ -133,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ui.stopWaveform();
       releaseStream();
       ui.show('home');
-      ui.showToast('Aufnahme konnte nicht gestartet werden: ' + (e.message || e), 'error');
+      ui.showToast('Aufnahme fehlgeschlagen: ' + (e.message || e), 'error');
     }
   }
 
