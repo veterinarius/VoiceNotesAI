@@ -1,9 +1,18 @@
-const CACHE = 'voicenotes-v1';
+const CACHE = 'voicenotes-v2';
+const BASE = self.registration.scope;
 const ASSETS = [
-  '/', '/index.html', '/manifest.json',
-  '/css/styles.css',
-  '/js/store.js', '/js/speech.js', '/js/processor.js', '/js/ui.js', '/js/app.js',
-  '/icons/icon-192.png', '/icons/icon-512.png'
+  BASE,
+  BASE + 'index.html',
+  BASE + 'manifest.json',
+  BASE + 'css/styles.css',
+  BASE + 'js/store.js',
+  BASE + 'js/speech.js',
+  BASE + 'js/whisper.js',
+  BASE + 'js/processor.js',
+  BASE + 'js/ui.js',
+  BASE + 'js/app.js',
+  BASE + 'icons/icon-192.png',
+  BASE + 'icons/icon-512.png'
 ];
 
 self.addEventListener('install', e => {
@@ -19,6 +28,19 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // JS/CSS: Network-first damit Updates sofort ankommen
+  const url = e.request.url;
+  if (url.includes('/js/') || url.includes('/css/')) {
+    e.respondWith(
+      fetch(e.request).then(resp => {
+        const clone = resp.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return resp;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+  // Alles andere: Cache-first
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(resp => {
       const clone = resp.clone();
