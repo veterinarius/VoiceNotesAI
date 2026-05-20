@@ -73,7 +73,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- Mikrofon-Stream (in Arc einmalig anfordern und halten) ---
+  // --- Mikrofon-Stream ---
+  // In Arc: Basis-Stream einmalig halten (kein wiederholter Permission-Dialog).
+  // Für jede Aufnahme wird ein frischer Klon verwendet, damit MediaRecorder
+  // keine veralteten Tracks bekommt.
+  let recordingStream = null;
+
   function streamActive() {
     return currentStream && currentStream.getTracks().some(t => t.readyState === 'live');
   }
@@ -90,7 +95,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function releaseStream() {
-    // In Arc Stream halten, damit kein wiederholter Berechtigungs-Dialog erscheint
+    if (recordingStream) {
+      recordingStream.getTracks().forEach(t => t.stop());
+      recordingStream = null;
+    }
     if (!isArc && currentStream) {
       currentStream.getTracks().forEach(t => t.stop());
       currentStream = null;
@@ -98,12 +106,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.addEventListener('beforeunload', () => {
+    if (recordingStream) recordingStream.getTracks().forEach(t => t.stop());
     if (currentStream) currentStream.getTracks().forEach(t => t.stop());
   });
 
   // --- Whisper Aufnahme ---
   async function startWhisperRecording() {
     if (!await acquireStream()) return;
+
+    // Frischen Klon für jeden MediaRecorder-Durchlauf erzeugen
+    recordingStream = currentStream.clone();
 
     ui.show('recording');
     ui.setTranscript('🎙 Aufnahme läuft – nach dem Stoppen wird Text erkannt…');
@@ -114,7 +126,15 @@ document.addEventListener('DOMContentLoaded', () => {
       ui.setRecordingTime(Math.floor((Date.now() - recordingStart) / 1000));
     }, 1000);
 
-    await whisper.start(currentStream);
+    try {
+      await whisper.start(recordingStream);
+    } catch (e) {
+      clearInterval(timerInterval);
+      ui.stopWaveform();
+      releaseStream();
+      ui.show('home');
+      ui.showToast('Aufnahme konnte nicht gestartet werden: ' + (e.message || e), 'error');
+    }
   }
 
   // --- Web Speech Aufnahme ---

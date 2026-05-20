@@ -16,6 +16,7 @@ class WhisperRecorder {
 
     this._recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
     this._recorder.ondataavailable = (e) => { if (e.data.size > 0) this._chunks.push(e.data); };
+    this._recorder.onerror = (e) => { console.error('MediaRecorder error:', e.error); };
     this._recorder.start(100);
 
     // Waveform-Analyse über denselben Stream
@@ -30,11 +31,19 @@ class WhisperRecorder {
   stop() {
     this._stopVisual();
     return new Promise((resolve) => {
+      if (!this._recorder || this._recorder.state === 'inactive') {
+        resolve(new Blob(this._chunks, { type: (this._recorder?.mimeType) || 'audio/webm' }));
+        return;
+      }
       this._recorder.onstop = () => {
         const mimeType = this._recorder.mimeType || 'audio/webm';
         resolve(new Blob(this._chunks, { type: mimeType }));
       };
-      this._recorder.stop();
+      try {
+        this._recorder.stop();
+      } catch {
+        resolve(new Blob(this._chunks, { type: 'audio/webm' }));
+      }
     });
   }
 
