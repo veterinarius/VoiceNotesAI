@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const ui = new UI();
 
   const isArc = /Arc\//.test(navigator.userAgent);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   let recordingStart = null;
   let timerInterval = null;
   let currentStream = null;
@@ -21,15 +22,22 @@ document.addEventListener('DOMContentLoaded', () => {
     return isArc || !speech.supported || !!localStorage.getItem('vn_openai_key') && localStorage.getItem('vn_force_whisper') === '1';
   }
 
+  function needsWhisper() {
+    return isArc || isIOS || localStorage.getItem('vn_force_whisper') === '1';
+  }
+
   function updateModeIndicator() {
     const el = document.getElementById('mode-indicator');
     if (!el) return;
     const hasKey = localStorage.getItem('vn_groq_key') || localStorage.getItem('vn_openai_key');
     const provider = localStorage.getItem('vn_groq_key') ? 'Groq (kostenlos)' : 'OpenAI';
-    if (isArc && !hasKey) {
+    if (isIOS && !hasKey) {
+      el.textContent = '⚠️ iPhone erkannt – bitte Groq API-Key in den Einstellungen hinterlegen (kostenlos).';
+      el.className = 'mode-warning';
+    } else if (isArc && !hasKey) {
       el.textContent = '⚠️ Arc erkannt – bitte Groq API-Key in den Einstellungen hinterlegen.';
       el.className = 'mode-warning';
-    } else if ((isArc || localStorage.getItem('vn_force_whisper') === '1') && hasKey) {
+    } else if (needsWhisper() && hasKey) {
       el.textContent = `🤖 Transkription via Whisper · ${provider}`;
       el.className = 'mode-info';
     } else {
@@ -42,12 +50,15 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-record')?.addEventListener('click', startRecording);
 
   async function startRecording() {
-    useWhisper = isArc || localStorage.getItem('vn_force_whisper') === '1';
+    useWhisper = needsWhisper();
 
     if (useWhisper) {
-      const key = localStorage.getItem('vn_openai_key');
+      const key = localStorage.getItem('vn_groq_key') || localStorage.getItem('vn_openai_key');
       if (!key) {
-        ui.showToast('Bitte zuerst den OpenAI API-Key in den Einstellungen eintragen.', 'error');
+        const msg = isIOS
+          ? 'iPhone erkannt: Bitte zuerst einen kostenlosen Groq API-Key in den Einstellungen eintragen.'
+          : 'Bitte zuerst einen API-Key (Groq oder OpenAI) in den Einstellungen eintragen.';
+        ui.showToast(msg, 'error');
         ui.show('settings');
         return;
       }
