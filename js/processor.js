@@ -42,7 +42,21 @@ class AITextProcessor {
         max_tokens: 1024,
         messages: [{
           role: 'user',
-          content: `Bereinige diesen diktierten Text auf ${langLabel}. Entferne Füllwörter, korrigiere Grammatik, strukturiere in Sätze. Gib NUR den bereinigten Text zurück, keine Erklärungen.\n\nText: ${text}`
+          content: `Du bearbeitest einen diktierten Sprachtext auf ${langLabel}. Führe folgende Schritte durch:
+
+1. Entferne alle Füllwörter (äh, ähm, also, halt, sozusagen usw.)
+2. Korrigiere Rechtschreibung, Grammatik und setze korrekte Satzzeichen
+3. Gliedere den Text in sinnvolle Absätze
+4. Stelle eine kurze Zusammenfassung (1–2 Sätze) ganz oben voran, abgetrennt durch eine Leerzeile
+
+Ausgabeformat:
+[Zusammenfassung]
+
+[Verbesserter Text in Absätzen]
+
+Gib NUR das Ergebnis zurück – keine Erklärungen, keine Überschriften, keine Kommentare.
+
+Text: ${text}`
         }]
       })
     });
