@@ -325,6 +325,8 @@ html, body {
 .btn-secondary { background: var(--surface2); color: var(--text); }
 .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
 .btn-download { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+.btn-ai { background: linear-gradient(135deg, #6c63ff, #a78bfa); color: #fff; }
+.btn-ai:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ---- Settings Screen ---- */
 .settings-content { flex: 1; overflow-y: auto; padding: 20px; }

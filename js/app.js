@@ -285,6 +285,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  document.getElementById('btn-ai-improve')?.addEventListener('click', async () => {
+    const id = document.getElementById('detail-id')?.value;
+    const note = id ? store.getById(id) : null;
+    if (!note) return;
+
+    const apiKey = localStorage.getItem('vn_claude_key');
+    if (!apiKey) {
+      ui.showToast('Bitte zuerst Anthropic API-Key in den Einstellungen eintragen.', 'error');
+      ui.show('settings');
+      return;
+    }
+
+    const btn = document.getElementById('btn-ai-improve');
+    btn.textContent = '⏳';
+    btn.disabled = true;
+
+    const lang = localStorage.getItem('vn_lang') || 'de-DE';
+    try {
+      const improved = await processor.process(note.body, lang);
+      store.update(id, { body: improved, title: processor.generateTitle(improved) });
+      document.getElementById('detail-body').textContent = improved;
+      document.getElementById('detail-title').textContent = processor.generateTitle(improved);
+      ui.showToast('Text verbessert ✨', 'success');
+    } catch {
+      ui.showToast('KI-Verbesserung fehlgeschlagen', 'error');
+    } finally {
+      btn.textContent = '✨ KI';
+      btn.disabled = false;
+    }
+  });
+
   document.getElementById('btn-edit-save')?.addEventListener('click', () => {
     const id = document.getElementById('detail-id')?.value;
     const bodyEl = document.getElementById('detail-body');
