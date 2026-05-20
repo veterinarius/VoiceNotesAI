@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VoiceNotes AI</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- SCREEN: Home -->
+  <div id="screen-home" class="screen">
+    <div class="header">
+      <h1>🎙 VoiceNotes</h1>
+      <button id="btn-settings" class="btn-icon" aria-label="Einstellungen">⚙️</button>
+    </div>
+    <div id="mode-indicator"></div>
+    <div class="note-list-container">
+      <ul id="note-list"></ul>
+    </div>
+    <div class="fab-container">
+      <button id="btn-record" aria-label="Aufnahme starten">
+        <span class="mic-icon">🎤</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- SCREEN: Recording -->
+  <div id="screen-recording" class="screen hidden">
+    <div class="header">
+      <h1>Aufnahme läuft</h1>
+    </div>
+    <div class="recording-content">
+      <div class="recording-indicator">
+        <div class="pulse-ring">
+          <div class="pulse-ring-inner">🎙</div>
+        </div>
+        <span id="recording-time">0s</span>
+      </div>
+      <div id="waveform-bars" class="waveform-bars">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="transcript-box" id="live-transcript">Ich höre zu…</div>
+      <button id="btn-stop" aria-label="Aufnahme stoppen">⏹</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: Note Detail -->
+  <div id="screen-detail" class="screen hidden">
+    <div class="detail-header">
+      <button id="btn-back" class="btn-icon" aria-label="Zurück">←</button>
+      <h2 id="detail-title"></h2>
+    </div>
+    <div class="detail-content">
+      <div id="detail-meta"></div>
+      <div id="detail-body" contenteditable="false"></div>
+      <input type="hidden" id="detail-id">
+    </div>
+    <div class="detail-actions">
+      <button id="btn-edit-save" class="btn-action btn-secondary">Bearbeiten</button>
+      <button id="btn-share" class="btn-action btn-primary">Kopieren</button>
+      <button id="btn-download" class="btn-action btn-download">Speichern</button>
+      <button id="btn-delete" class="btn-action btn-danger">Löschen</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: Settings -->
+  <div id="screen-settings" class="screen hidden">
+    <div class="header">
+      <button id="btn-settings-back" class="btn-icon" aria-label="Zurück">←</button>
+      <h1>Einstellungen</h1>
+      <div style="width:48px"></div>
+    </div>
+    <div class="settings-content">
+      <div class="settings-section">
+        <h3>Sprache</h3>
+        <label for="settings-lang">Erkennungssprache</label>
+        <select id="settings-lang">
+          <option value="de-DE">Deutsch (DE)</option>
+          <option value="de-AT">Deutsch (AT)</option>
+          <option value="de-CH">Deutsch (CH)</option>
+          <option value="en-US">English (US)</option>
+          <option value="en-GB">English (GB)</option>
+          <option value="fr-FR">Français</option>
+          <option value="es-ES">Español</option>
+          <option value="it-IT">Italiano</option>
+        </select>
+      </div>
+      <div class="settings-section">
+        <h3>Whisper Transkription (Arc / alle Browser)</h3>
+        <label for="settings-groq-key">Groq API-Key <span style="color:var(--success);font-size:0.75rem">✓ kostenlos</span></label>
+        <input type="password" id="settings-groq-key" placeholder="gsk_...">
+        <p class="settings-hint">
+          Empfohlen. Kostenloser Key auf <strong>console.groq.com</strong> → API Keys.
+        </p>
+        <button id="btn-save-groq-key" class="btn-action btn-primary" style="width:auto;padding:12px 24px;margin-bottom:16px">Speichern</button>
+        <label for="settings-openai-key">OpenAI API-Key <span style="color:var(--text2);font-size:0.75rem">(Alternative)</span></label>
+        <input type="password" id="settings-openai-key" placeholder="sk-...">
+        <p class="settings-hint">Nur nötig wenn kein Groq-Key vorhanden. Key auf <strong>platform.openai.com</strong>.</p>
+        <button id="btn-save-openai-key" class="btn-action btn-secondary" style="width:auto;padding:12px 24px">Speichern</button>
+        <div class="settings-toggle">
+          <label for="settings-force-whisper">Whisper immer verwenden</label>
+          <input type="checkbox" id="settings-force-whisper">
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>KI-Textverbesserung (optional)</h3>
+        <label for="settings-apikey">Anthropic API-Key</label>
+        <input type="password" id="settings-apikey" placeholder="sk-ant-...">
+        <p class="settings-hint">
+          Ohne API-Key: einfache Regel-basierte Bereinigung.<br>
+          Mit API-Key: Claude KI verbessert den Text intelligent.
+          Den Key erhältst du auf <strong>console.anthropic.com</strong>.
+        </p>
+        <button id="btn-save-apikey" class="btn-action btn-primary" style="width:auto;padding:12px 24px">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/store.js"></script>
+<script src="js/speech.js"></script>
+<script src="js/whisper.js"></script>
+<script src="js/processor.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
